@@ -158,11 +158,10 @@ export default function ChatBot() {
                         {messages.map((m, i) => (
                             <div
                                 key={i}
-                                className={`p-2 rounded-lg w-fit max-w-[80%] ${
-                                    m.from === "user"
+                                className={`p-2 rounded-lg max-w-[80%] break-words whitespace-pre-wrap ${m.from === "user"
                                         ? "ml-auto bg-emerald-500 text-white"
                                         : "bg-white/10 text-white/80"
-                                }`}
+                                    }`}
                             >
                                 {m.text}
                             </div>
