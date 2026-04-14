@@ -17,35 +17,43 @@ export default function Contact() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const sendEmail = (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const sendEmail = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    const toastId = toast.loading("Sending message...");
+  const toastId = toast.loading("Sending message...");
 
-    emailjs
-      .sendForm(
-        "service_n8nqgwo",
-        "template_2r86u2n",
-        formRef.current,
-        "DkByMYouE05zn48tO"
-      )
-      .then(
-        () => {
-          toast.success("Message sent successfully", {
-            id: toastId,
-          });
-          setLoading(false);
-          formRef.current.reset();
-        },
-        () => {
-          toast.error("Failed to send message", {
-            id: toastId,
-          });
-          setLoading(false);
-        }
-      );
+  const formData = new FormData(formRef.current);
+
+  const data = {
+    name: formData.get("name"),
+    email: formData.get("email"),
+    message: formData.get("message"),
   };
+
+  try {
+    const res = await fetch("https://project-lcx9g.vercel.app/api/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      toast.success("Message sent successfully", { id: toastId });
+      formRef.current.reset();
+    } else {
+      toast.error("Failed to send message", { id: toastId });
+    }
+  } catch (err) {
+    toast.error("Server error", { id: toastId });
+  }
+
+  setLoading(false);
+};
   return (
     <section id="contact" className="relative w-full py-24 text-white overflow-hidden">
       <div className="max-w-4xl mx-auto px-6">
@@ -82,7 +90,7 @@ export default function Contact() {
               <User className="text-emerald-400" />
               <input
                 type="text"
-                name="from_name"
+                name="name"
                 placeholder="Your Name"
                 className="w-full bg-transparent outline-none text-white"
                 required
@@ -94,7 +102,7 @@ export default function Contact() {
               <Mail className="text-emerald-400" />
               <input
                 type="email"
-                name="from_email"
+                name="email"
                 placeholder="Your Email"
                 className="w-full bg-transparent outline-none text-white"
                 required

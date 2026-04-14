@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X } from "lucide-react";
 import sound from "../assets/sound.mp3";
 
@@ -10,125 +10,90 @@ export default function ChatBot() {
     const [input, setInput] = useState("");
     const [typing, setTyping] = useState(false);
 
-    const API_KEY = "AIzaSyD01px3nnD9lkdaotc7AX5PXZjNgm7idpA";
+    const messagesEndRef = useRef(null);
 
     const MAX_ASKS = 3;
 
-    const getAskCount = () =>
-        parseInt(localStorage.getItem("askCount") || "0");
-
-    const setAskCount = (val) =>
-        localStorage.setItem("askCount", val.toString());
-
-    // 🔊 SOUND
-    const playSound = () => {
-        const audio = new Audio(sound);
-        audio.volume = 0.5;
-        audio.play();
+    // -----------------------
+    // SAFE localStorage access
+    // -----------------------
+    const getAskCount = () => {
+        if (typeof window === "undefined") return 0;
+        return parseInt(localStorage.getItem("askCount") || "0");
     };
 
-    // 🧼 CLEAN RESPONSE
+    const setAskCount = (val) => {
+        if (typeof window === "undefined") return;
+        localStorage.setItem("askCount", val.toString());
+    };
+
+    // -----------------------
+    // SOUND
+    // -----------------------
+    const playSound = () => {
+        try {
+            const audio = new Audio(sound);
+            audio.volume = 0.5;
+            audio.play();
+        } catch (e) {
+            console.log("Sound error:", e);
+        }
+    };
+
+    // -----------------------
+    // CLEAN AI RESPONSE
+    // -----------------------
     const cleanText = (text) => {
-        return text
+        return String(text)
             .replace(/\*\*/g, "")
             .replace(/\*/g, "")
-            .replace(/_/g, "");
+            .replace(/_/g, "")
+            .trim();
     };
 
-    // 🤖 AI CALL
+    // -----------------------
+    // AUTO SCROLL
+    // -----------------------
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, typing]);
+
+    // -----------------------
+    // API CALL
+    // -----------------------
     const getAIResponse = async (userMessage) => {
         try {
             const res = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`,
+                "https://project-lcx9g.vercel.app/api/chat",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({
-                        contents: [
-                            {
-                                parts: [
-                                    {
-                                        text: `
-You are a professional Virtual Assistant and IT Support chatbot representing Revin De Castro's portfolio.
-
-IMPORTANT RULES:
-- Be professional, friendly, and concise
-- DO NOT use markdown (** or *)
-- DO NOT introduce yourself unless asked
-- Focus on VA + IT services
-- If asked to contact someone → redirect to contact form
-- When asked "who do you work with" or similar: → Answer: "you assist revin" or similar 
-- Focus on helping the client, not introducing yourself 
-- If asked if available → say YES and guide to contact 
-- If user asks to contact someone, reach out, or message directly:
-→ Respond that you cannot directly contact people
-→ Redirect them to the contact form
-→ Keep tone professional and helpful
-
-PROFILE:
-Name: Revin De Castro
-Email: redc1026@gmail.com
-Facebook: https://www.facebook.com/jarv.is0008
-Instagram: https://www.instagram.com/jarv.is0008
-LinkedIn: https://www.linkedin.com/in/jarvis26
-
-SKILLS:
-- Virtual Assistance (email, scheduling, admin, data entry)
-- IT Support (hardware, software, troubleshooting)
-- Web Development (React, Tailwind, Node.js)
-
-TOOLS:
-C#, PHP, JavaScript, NodeJS, Express, React, MySQL, MSSQL, GitHub
-
-EXPERIENCE:
-IT Support (2023–Present)
-- CCTV installation
-- Network setup
-- Computer troubleshooting
-- Payroll system support
-- Website development
-
-
-
-CURRENT TIME:
-${new Date().toLocaleString("en-PH", {
-    timeZone: "Asia/Manila",
-})}
-
-User: ${userMessage}
-                                        `,
-                                    },
-                                ],
-                            },
-                        ],
-                    }),
+                    body: JSON.stringify({ message: userMessage }),
                 }
             );
 
             const data = await res.json();
 
-            if (data?.error?.message) {
-                return `API Error: ${data.error.message}`;
+            if (!res.ok || data?.error) {
+                return data?.error || "API Error occurred.";
             }
 
-            return (
-                data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-                "No response from AI."
-            );
+            return data?.reply || "No response from AI.";
         } catch (err) {
             return "Network error. Please try again.";
         }
     };
 
-    // 💬 SEND MESSAGE
+    // -----------------------
+    // SEND MESSAGE
+    // -----------------------
     const handleSend = async () => {
         if (!input.trim() || typing) return;
 
         let count = getAskCount();
 
-        // 🚫 LIMIT CHECK
         if (count >= MAX_ASKS) {
             setMessages((prev) => [
                 ...prev,
@@ -140,7 +105,7 @@ User: ${userMessage}
             return;
         }
 
-        const userText = input;
+        const userText = input.trim();
         setInput("");
 
         setMessages((prev) => [
@@ -149,20 +114,17 @@ User: ${userMessage}
         ]);
 
         setAskCount(count + 1);
-
         setTyping(true);
 
         const aiReply = await getAIResponse(userText);
 
-        setTimeout(() => {
-            setMessages((prev) => [
-                ...prev,
-                { from: "bot", text: cleanText(aiReply) },
-            ]);
+        setMessages((prev) => [
+            ...prev,
+            { from: "bot", text: cleanText(aiReply) },
+        ]);
 
-            playSound();
-            setTyping(false);
-        }, 800);
+        playSound();
+        setTyping(false);
     };
 
     return (
@@ -211,6 +173,8 @@ User: ${userMessage}
                                 AI is typing...
                             </div>
                         )}
+
+                        <div ref={messagesEndRef} />
                     </div>
 
                     {/* INPUT */}
