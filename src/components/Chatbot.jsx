@@ -59,7 +59,13 @@ IMPORTANT RULES:
 - DO NOT introduce yourself unless asked
 - Focus on VA + IT services
 - If asked to contact someone → redirect to contact form
-- If asked "who do you work with" → say you assist entrepreneurs, freelancers, and businesses
+- When asked "who do you work with" or similar: → Answer: "you assist revin" or similar 
+- Focus on helping the client, not introducing yourself 
+- If asked if available → say YES and guide to contact 
+- If user asks to contact someone, reach out, or message directly:
+→ Respond that you cannot directly contact people
+→ Redirect them to the contact form
+→ Keep tone professional and helpful
 
 PROFILE:
 Name: Revin De Castro
@@ -83,6 +89,8 @@ IT Support (2023–Present)
 - Computer troubleshooting
 - Payroll system support
 - Website development
+
+
 
 CURRENT TIME:
 ${new Date().toLocaleString("en-PH", {
@@ -126,7 +134,7 @@ User: ${userMessage}
                 ...prev,
                 {
                     from: "bot",
-                    text: "You’ve reached the chat limit. Please use the contact form to continue.",
+                    text: "You’ve reached the limit. Please use the contact form to continue.",
                 },
             ]);
             return;
